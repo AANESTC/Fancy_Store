@@ -7,7 +7,13 @@ const { generateToken } = require('../services/jwtService');
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { Name, Email, Mobile, Password } = req.body;
+    // Accept both lowercase (frontend) and capitalized field names
+    const Name = req.body.Name || req.body.name;
+    const Email = req.body.Email || req.body.email;
+    const Mobile = req.body.Mobile || req.body.mobile;
+    const Password = req.body.Password || req.body.password;
+
+    if (!Email) return res.status(400).json({ message: 'Email is required' });
 
     const exists = await User.findOne({ where: { Email } });
     if (exists) return res.status(400).json({ message: 'Email or Mobile already registered' });
@@ -29,7 +35,11 @@ router.post('/register', async (req, res) => {
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
-    const { Email, Password } = req.body;
+    // Accept both lowercase (frontend) and capitalized field names
+    const Email = req.body.Email || req.body.email;
+    const Password = req.body.Password || req.body.password;
+
+    if (!Email) return res.status(400).json({ message: 'Email is required' });
 
     const user = await User.findOne({ where: { Email } });
     if (!user || !(await bcrypt.compare(Password, user.PasswordHash))) {
