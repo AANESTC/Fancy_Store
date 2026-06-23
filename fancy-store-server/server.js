@@ -23,6 +23,21 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Normalize request body: convert camelCase keys (from React frontend) to PascalCase (for DB models)
+// e.g. { name, categoryId, isActive } → { Name, CategoryId, IsActive }
+const toPascalCase = (key) => key.charAt(0).toUpperCase() + key.slice(1);
+const normalizeBody = (req, res, next) => {
+  if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
+    const normalized = {};
+    for (const [key, value] of Object.entries(req.body)) {
+      normalized[toPascalCase(key)] = value;
+    }
+    req.body = normalized;
+  }
+  next();
+};
+app.use(normalizeBody);
+
 // Serve uploaded product images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
