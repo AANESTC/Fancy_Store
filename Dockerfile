@@ -1,26 +1,29 @@
-# Use Node.js to build and serve the React frontend
-FROM node:20-alpine
-
-# Set the working directory
-WORKDIR /app
-
-# Copy package.json files from the frontend directory
+# Stage 1: Build the React frontend
+FROM node:20-alpine AS frontend-build
+WORKDIR /frontend
 COPY fancy-store-client/package*.json ./
-
-# Install dependencies
 RUN npm install
-
-# Copy the rest of the frontend source code
 COPY fancy-store-client/ ./
-
-# Build the Vite React app for production
 RUN npm run build
 
-# Install a simple Node.js static file server
-RUN npm install -g serve
+# Stage 2: Build the ASP.NET Core backend
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-build
+WORKDIR /src
+COPY ["FancyStore.API/FancyStore.API.csproj", "FancyStore.API/"]
+RUN dotnet restore "FancyStore.API/FancyStore.API.csproj"
+COPY ["FancyStore.API/", "FancyStore.API/"]
+WORKDIR "/src/FancyStore.API"
+RUN dotnet publish "FancyStore.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Expose the port (Render will automatically bind to this)
-EXPOSE 3000
+# Stage 3: Serve the combined application
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+COPY --from=backend-build /app/publish .
+# Copy the built React app into the wwwroot folder of the ASP.NET Core API
+COPY --from=frontend-build /frontend/dist ./wwwroot
 
-# Start the server, serving the 'dist' directory and handling React Router (-s)
-CMD ["serve", "-s", "dist", "-l", "3000"]
+EXPOSE 8080
+ENV ASPNETCORE_HTTP_PORTS=8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+ENTRYPOINT ["dotnet", "FancyStore.API.dll"]

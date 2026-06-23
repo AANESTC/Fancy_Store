@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5126/api', // Matches ASP.NET Core API
+  baseURL: import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:5126/api',
   headers: {
     'Content-Type': 'application/json',
   },

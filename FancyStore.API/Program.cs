@@ -59,9 +59,11 @@ app.UseCors("AllowFrontend");
 // app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.MapControllers();
+app.MapFallbackToFile("index.html");
 
 // Ensure DB Creation
 using (var scope = app.Services.CreateScope())
