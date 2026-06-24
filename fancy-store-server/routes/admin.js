@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
+
 const { Op, fn, col, literal, Sequelize } = require('sequelize');
 const { User, Category, Product, Order, OrderItem, Coupon, PriceRange, Review, Cart } = require('../models');
 const { authenticate, requireAdmin } = require('../middleware/auth');
@@ -468,28 +467,49 @@ router.patch('/inventory/:id/stock', async (req, res) => {
   }
 });
 
-// ==================== IMAGE UPLOAD ====================
-const uploadDir = path.join(__dirname, '..', 'uploads', 'products');
-fs.mkdirSync(uploadDir, { recursive: true });
+// ==================== IMAGE UPLOAD (Cloudinary) ====================
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, `${require('crypto').randomUUID()}${path.extname(file.originalname).toLowerCase()}`),
+// Configure Cloudinary with environment variables
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const fileFilter = (req, file, cb) => {
-  const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
-  const ext = path.extname(file.originalname).toLowerCase();
-  allowed.includes(ext) ? cb(null, true) : cb(new Error('Invalid file type'));
-};
+// Use memory storage — we stream directly to Cloudinary, never touch disk
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    allowed.includes(ext) ? cb(null, true) : cb(new Error('Invalid file type'));
+  },
+});
 
-const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
-
-router.post('/upload', upload.single('file'), (req, res) => {
+router.post('/upload', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file provided' });
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
-  const url = `${baseUrl}/uploads/products/${req.file.filename}`;
-  return res.json({ url, message: 'Image uploaded successfully' });
+
+  try {
+    // Upload buffer directly to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: 'fancy-store/products', resource_type: 'image' },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      stream.end(req.file.buffer);
+    });
+
+    return res.json({ url: result.secure_url, message: 'Image uploaded successfully' });
+  } catch (err) {
+    console.error('Cloudinary upload error:', err);
+    return res.status(500).json({ message: 'Image upload failed' });
+  }
 });
 
 // ==================== PRICE RANGES ====================
