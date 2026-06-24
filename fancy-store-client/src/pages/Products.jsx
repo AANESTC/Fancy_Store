@@ -251,7 +251,11 @@ const Products = () => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.map(product => (
-                <div key={product.productId} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden group hover:shadow-md transition-shadow">
+                <div
+                  key={product.productId}
+                  onClick={() => navigate(`/products/${product.productId}`)}
+                  className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                >
                   <div className="relative h-64 overflow-hidden">
                     <img 
                       src={product.imageUrl} 
@@ -285,11 +289,9 @@ const Products = () => {
                   
                   <div className="p-5">
                     <p className="text-xs font-medium text-primary-600 mb-1">{product.categoryName}</p>
-                    <Link to={`/products/${product.productId}`}>
-                      <h3 className="font-bold text-slate-900 mb-2 truncate hover:text-primary-600 transition-colors">
-                        {product.name}
-                      </h3>
-                    </Link>
+                    <h3 className="font-bold text-slate-900 mb-2 truncate group-hover:text-primary-600 transition-colors">
+                      {product.name}
+                    </h3>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex text-accent">
                         <Star className="h-4 w-4 fill-current" />
