@@ -48,7 +48,7 @@ const Home = () => {
               Redefining <br/> <span className="font-bold">Elegance.</span>
             </h1>
             <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-xl leading-relaxed font-light">
-              Discover masterpieces crafted with precision. Elevate your presence with our exclusive bridal bangles, invisible chains, and diamond earrings.
+              Discover masterpieces crafted with precision. Elevate your presence with our exclusive bridal bangles, invisible chains, and diamond hair clips.
             </p>
             <div className="flex flex-wrap items-center gap-6">
               <Link to="/products" className="bg-white text-slate-900 hover:bg-slate-100 px-10 py-4 rounded-none text-sm font-bold tracking-widest uppercase transition-all flex items-center gap-3 group">

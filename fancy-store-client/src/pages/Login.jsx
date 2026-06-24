@@ -62,7 +62,7 @@ const Login = () => {
             <p className="brand-tagline">Where Elegance Meets Luxury</p>
             <div className="brand-divider" />
             <p className="brand-desc">
-              Discover our exquisite collection of bangles, chains, earrings, and fashion accessories crafted for the modern woman.
+              Discover our exquisite collection of bangles, chains, hair clips, and fashion accessories crafted for the modern woman.
             </p>
             <div className="brand-features">
               <div className="brand-feature">✨ Premium Jewelry Collections</div>

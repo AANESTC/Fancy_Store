@@ -68,8 +68,8 @@ const AdminCategories = () => {
   };
 
   const categoryIcons = {
-    'Bangles': '💍', 'Dollar Chains': '⛓️', 'Invisible Chains': '✨',
-    'Earrings': '👂', 'Hair Accessories': '🌸', 'Gift Items': '🎁', 'Fancy Items': '💎'
+    'Bangles': '⭕', 'Dollar Chains': '⛓️', 'Invisible Chains': '✨', 
+    'Hair Clips': '🎀', 'Hair Accessories': '🌸', 'Gift Items': '🎁', 'Fancy Items': '💎'
   };
 
   return (

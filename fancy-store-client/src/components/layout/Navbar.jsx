@@ -46,7 +46,7 @@ const Navbar = () => {
             <Link to="/" className="text-[11px] font-bold tracking-[0.2em] uppercase text-slate-900 hover:text-accent transition-colors">Home</Link>
             <Link to="/products?category=bangles" className="text-[11px] font-bold tracking-[0.2em] uppercase text-slate-900 hover:text-accent transition-colors">Bangles</Link>
             <Link to="/products?category=chains" className="text-[11px] font-bold tracking-[0.2em] uppercase text-slate-900 hover:text-accent transition-colors">Chains</Link>
-            <Link to="/products?category=earrings" className="text-[11px] font-bold tracking-[0.2em] uppercase text-slate-900 hover:text-accent transition-colors">Earrings</Link>
+            <Link to="/products?category=hair-clips" className="text-[11px] font-bold tracking-[0.2em] uppercase text-slate-900 hover:text-accent transition-colors">Hair Clips</Link>
             <Link to="/products" className="text-[11px] font-bold tracking-[0.2em] uppercase text-slate-900 hover:text-accent transition-colors">Boutique</Link>
           </div>
 
@@ -106,7 +106,7 @@ const Navbar = () => {
             <Link to="/" className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary-600 hover:bg-slate-50">Home</Link>
             <Link to="/products?category=bangles" className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary-600 hover:bg-slate-50">Bangles</Link>
             <Link to="/products?category=chains" className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary-600 hover:bg-slate-50">Chains</Link>
-            <Link to="/products?category=earrings" className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary-600 hover:bg-slate-50">Earrings</Link>
+            <Link to="/products?category=hair-clips" className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary-600 hover:bg-slate-50">Hair Clips</Link>
             <Link to="/products" className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary-600 hover:bg-slate-50">All Products</Link>
           </div>
         </div>
