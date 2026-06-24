@@ -286,10 +286,9 @@ const styles = {
   heroSection: {
     position: 'relative',
     width: '100%',
-    height: '60vh',
-    minHeight: 340,
-    maxHeight: 520,
-    background: '#1e1b4b',
+    aspectRatio: '3 / 4',
+    maxHeight: '88vh',
+    background: '#111827',
     overflow: 'hidden',
   },
   heroImgWrap: {
@@ -299,7 +298,8 @@ const styles = {
   heroImg: {
     width: '100%',
     height: '100%',
-    objectFit: 'cover',
+    objectFit: 'contain',
+    objectPosition: 'center top',
     transition: 'opacity 0.4s ease',
   },
   imgSkeleton: {
