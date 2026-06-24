@@ -83,7 +83,7 @@ const seedDatabase = async () => {
       { CategoryId: 1, CategoryName: 'Bangles', ImageUrl: '/images/categories/bangles.jpg', IsActive: true },
       { CategoryId: 2, CategoryName: 'Dollar Chains', ImageUrl: '/images/categories/dollar-chains.jpg', IsActive: true },
       { CategoryId: 3, CategoryName: 'Invisible Chains', ImageUrl: '/images/categories/invisible-chains.jpg', IsActive: true },
-      { CategoryId: 4, CategoryName: 'Earrings', ImageUrl: '/images/categories/earrings.jpg', IsActive: true },
+      { CategoryId: 4, CategoryName: 'Hair Clips', ImageUrl: '/images/categories/earrings.jpg', IsActive: true },
       { CategoryId: 5, CategoryName: 'Hair Accessories', ImageUrl: '/images/categories/hair-accessories.jpg', IsActive: true },
       { CategoryId: 6, CategoryName: 'Fancy Items', ImageUrl: '/images/categories/fancy-items.jpg', IsActive: true },
       { CategoryId: 7, CategoryName: 'Gift Items', ImageUrl: '/images/categories/gift-items.jpg', IsActive: true },
@@ -139,6 +139,10 @@ const start = async () => {
   try {
     // sync creates tables that don't exist without dropping existing ones
     await sequelize.sync({ alter: false });
+    
+    // Automatically migrate old "Earrings" category to "Hair Clips" on remote DBs
+    await Category.update({ CategoryName: 'Hair Clips' }, { where: { CategoryName: 'Earrings' } });
+    
     console.log('✅ Database connected and synced');
 
     await seedDatabase();
