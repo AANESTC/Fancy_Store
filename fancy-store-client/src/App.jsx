@@ -9,6 +9,8 @@ import Register from './pages/Register';
 import ProductDetail from './pages/ProductDetail';
 import Checkout from './pages/Checkout';
 import Wishlist from './pages/Wishlist';
+import Profile from './pages/Profile';
+import OurStory from './pages/OurStory';
 
 // Admin Pages
 import AdminLogin from './pages/admin/AdminLogin';
@@ -39,12 +41,10 @@ function App() {
         <Route path="checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />
         <Route path="profile" element={
           <PrivateRoute>
-            <div className="max-w-7xl mx-auto px-4 py-20 text-center">
-              <h1 className="text-3xl font-bold text-slate-900 mb-4">User Profile</h1>
-              <p className="text-slate-500">Profile page coming soon!</p>
-            </div>
+            <Profile />
           </PrivateRoute>
         } />
+        <Route path="our-story" element={<OurStory />} />
 
         {/* Auth Pages — redirect if already logged in */}
         <Route path="login" element={

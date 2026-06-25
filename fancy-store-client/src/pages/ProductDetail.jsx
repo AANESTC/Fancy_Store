@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Star, Truck, ShieldCheck, Heart, ArrowLeft,
-  Plus, Minus, ShoppingBag, Package, Tag, Zap
+  Plus, Minus, ShoppingBag, Package, Tag, Zap, RefreshCcw, CheckCircle, ChevronRight, Share2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
@@ -17,23 +17,41 @@ const ProductDetail = () => {
 
   const { isAuthenticated } = useSelector((state) => state.auth);
   const { items: wishlistItems } = useSelector((state) => state.wishlist);
+  
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [activeImage, setActiveImage] = useState(0);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const [addedToCart, setAddedToCart] = useState(false);
+  
+  // Related products
+  const [similarProducts, setSimilarProducts] = useState([]);
+  const [trendingProducts, setTrendingProducts] = useState([]);
 
-  const isWishlisted = wishlistItems.some(item => item.productId === product?.productId);
+  useEffect(() => {
+    fetchProductAndRelated();
+  }, [id]);
 
-  useEffect(() => { fetchProduct(); }, [id]);
-
-  const fetchProduct = async () => {
+  const fetchProductAndRelated = async () => {
     setLoading(true);
-    setImgLoaded(false);
     try {
       const response = await api.get(`/products/${id}`);
       setProduct(response.data);
+      
+      // Fetch related products (mocked by fetching same category)
+      if (response.data.categoryId) {
+        const catRes = await api.get(`/products?category=${response.data.categoryName.toLowerCase().replace(/ /g, '-')}&pageSize=4`);
+        if (catRes.data && catRes.data.products) {
+          setSimilarProducts(catRes.data.products.filter(p => p.productId !== response.data.productId).slice(0, 4));
+        }
+      }
+
+      // Fetch trending
+      const trendRes = await api.get('/products?pageSize=4');
+      if (trendRes.data && trendRes.data.products) {
+        setTrendingProducts(trendRes.data.products.slice(0, 4));
+      }
+
     } catch {
       toast.error('Failed to load product details');
     } finally {
@@ -46,17 +64,17 @@ const ProductDetail = () => {
     if (product) dispatch(toggleWishlist(product));
   };
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (buyNow = false) => {
     setIsAddingToCart(true);
     try {
       await new Promise(r => setTimeout(r, 400));
       dispatch(addToCartLocal({ ...product, quantity }));
-      setAddedToCart(true);
       toast.success(`${product.name} added to cart!`);
-      setTimeout(() => setAddedToCart(false), 2000);
+      if (buyNow) {
+        navigate('/cart');
+      }
     } catch {
-      toast.error('Please login to add items to cart');
-      navigate('/login');
+      toast.error('Failed to add to cart');
     } finally {
       setIsAddingToCart(false);
     }
@@ -64,506 +82,333 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <div style={styles.loadingScreen}>
-        <div style={styles.loadingSpinner} />
-        <p style={styles.loadingText}>Loading product...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
+        <div className="w-12 h-12 border-4 border-slate-200 border-t-primary-600 rounded-full animate-spin"></div>
+        <p className="text-slate-500 font-medium">Loading premium experience...</p>
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div style={styles.loadingScreen}>
-        <p style={{ fontSize: 24, color: '#64748b' }}>Product not found</p>
-        <button onClick={() => navigate('/products')} style={styles.backBtnAlt}>← Back to Products</button>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center">
+        <h2 className="text-2xl font-bold text-slate-800 mb-4">Product Not Found</h2>
+        <button onClick={() => navigate('/products')} className="btn-primary">Return to Shop</button>
       </div>
     );
   }
 
   const savings = product.discount > 0 ? (product.price - product.discountedPrice).toFixed(2) : 0;
+  const isWishlisted = wishlistItems.some(item => item.productId === product?.productId);
+
+  // Generate mock gallery since API has only one image
+  const galleryImages = [
+    product.imageUrl,
+    product.imageUrl,
+    product.imageUrl,
+    product.imageUrl
+  ];
 
   return (
-    <div style={styles.page}>
-      {/* ===== FULL SCREEN HERO IMAGE ===== */}
-      <div style={styles.heroSection}>
-        {/* Back Button */}
-        <button onClick={() => navigate(-1)} style={styles.backBtn}>
-          <ArrowLeft size={20} />
-          <span>Back</span>
-        </button>
-
-        {/* Wishlist */}
-        <button onClick={handleToggleWishlist} style={{
-          ...styles.wishBtn,
-          background: isWishlisted ? '#fee2e2' : 'rgba(255,255,255,0.9)',
-          color: isWishlisted ? '#ef4444' : '#64748b',
-        }}>
-          <Heart size={22} fill={isWishlisted ? '#ef4444' : 'none'} />
-        </button>
-
-        {/* Hero Image */}
-        <div style={styles.heroImgWrap}>
-          {!imgLoaded && <div style={styles.imgSkeleton} />}
-          <img
-            src={product.imageUrl || 'https://via.placeholder.com/800x900?text=No+Image'}
-            alt={product.name}
-            onLoad={() => setImgLoaded(true)}
-            style={{ ...styles.heroImg, opacity: imgLoaded ? 1 : 0 }}
-          />
+    <div className="bg-slate-50 min-h-screen pb-20">
+      {/* Breadcrumbs */}
+      <div className="bg-white border-b border-slate-200 py-3 hidden md:block">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center text-sm text-slate-500">
+          <Link to="/" className="hover:text-primary-600 transition-colors">Home</Link>
+          <ChevronRight className="w-4 h-4 mx-2" />
+          <Link to="/products" className="hover:text-primary-600 transition-colors">Jewelry</Link>
+          <ChevronRight className="w-4 h-4 mx-2" />
+          <Link to={`/products?category=${product.categoryName}`} className="hover:text-primary-600 transition-colors">{product.categoryName}</Link>
+          <ChevronRight className="w-4 h-4 mx-2" />
+          <span className="text-slate-900 font-medium truncate max-w-[200px]">{product.name}</span>
         </div>
-
-        {/* Gradient overlay at bottom */}
-        <div style={styles.heroGradient} />
-
-        {/* Discount badge */}
-        {product.discount > 0 && (
-          <div style={styles.discountBadge}>
-            <Tag size={14} />
-            {product.discount}% OFF
-          </div>
-        )}
-
-        {/* Stock badge */}
-        {product.stock <= 10 && product.stock > 0 && (
-          <div style={styles.stockBadge}>
-            <Zap size={13} />
-            Only {product.stock} left!
-          </div>
-        )}
       </div>
 
-      {/* ===== DETAILS PANEL (slides up over image) ===== */}
-      <div style={styles.detailsPanel}>
-        {/* Category pill */}
-        <span style={styles.categoryPill}>{product.categoryName}</span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2">
+            
+            {/* ====== IMAGE GALLERY ====== */}
+            <div className="p-6 md:p-10 border-b lg:border-b-0 lg:border-r border-slate-200 flex flex-col-reverse md:flex-row gap-6 relative">
+              
+              {/* Floating Badges */}
+              <div className="absolute top-10 left-10 z-10 flex flex-col gap-2">
+                {product.discount > 0 && (
+                  <span className="bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md flex items-center gap-1">
+                    <Tag className="w-3 h-3" /> {product.discount}% OFF
+                  </span>
+                )}
+                {product.isBestSeller && (
+                  <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
+                    #1 Best Seller
+                  </span>
+                )}
+              </div>
 
-        {/* Product name */}
-        <h1 style={styles.productName}>{product.name}</h1>
+              {/* Share & Wishlist */}
+              <div className="absolute top-10 right-10 z-10 flex flex-col gap-3">
+                <button 
+                  onClick={handleToggleWishlist}
+                  className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border border-slate-100 text-slate-400 hover:text-red-500 hover:scale-110 transition-all"
+                >
+                  <Heart className={`w-6 h-6 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
+                </button>
+                <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border border-slate-100 text-slate-400 hover:text-primary-600 hover:scale-110 transition-all">
+                  <Share2 className="w-5 h-5" />
+                </button>
+              </div>
 
-        {/* Rating row */}
-        <div style={styles.ratingRow}>
-          <div style={styles.stars}>
-            {[1, 2, 3, 4, 5].map(s => (
-              <Star key={s} size={16}
-                fill={s <= Math.round(product.averageRating) ? '#f59e0b' : 'none'}
-                color={s <= Math.round(product.averageRating) ? '#f59e0b' : '#d1d5db'}
-              />
-            ))}
+              {/* Thumbnail strip */}
+              <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-visible pb-2 md:pb-0 hide-scrollbar md:w-24 shrink-0">
+                {galleryImages.map((img, idx) => (
+                  <button 
+                    key={idx}
+                    onClick={() => setActiveImage(idx)}
+                    className={`w-20 h-24 md:w-full md:h-28 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${activeImage === idx ? 'border-primary-600 shadow-md scale-105' : 'border-slate-100 opacity-60 hover:opacity-100'}`}
+                  >
+                    <img src={img} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+
+              {/* Main Image */}
+              <div className="flex-1 bg-slate-50 rounded-2xl overflow-hidden relative group cursor-zoom-in min-h-[400px]">
+                <img 
+                  src={galleryImages[activeImage]} 
+                  alt={product.name} 
+                  className="w-full h-full object-contain absolute inset-0 mix-blend-multiply group-hover:scale-150 transition-transform duration-500 origin-center"
+                />
+              </div>
+            </div>
+
+            {/* ====== PRODUCT DETAILS ====== */}
+            <div className="p-6 md:p-10 flex flex-col">
+              <Link to={`/products?category=${product.categoryName}`} className="text-primary-600 text-sm font-bold tracking-widest uppercase mb-3 hover:underline">
+                {product.categoryName}
+              </Link>
+              <h1 className="text-3xl md:text-4xl font-display font-bold text-slate-900 mb-4 leading-tight">
+                {product.name}
+              </h1>
+
+              {/* Ratings */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="flex items-center gap-1 bg-green-50 px-3 py-1 rounded-full border border-green-200">
+                  <span className="font-bold text-green-700 text-sm">{product.averageRating}</span>
+                  <Star className="w-4 h-4 fill-green-600 text-green-600" />
+                </div>
+                <span className="text-slate-500 text-sm font-medium hover:text-primary-600 cursor-pointer transition-colors underline decoration-dotted">
+                  Read {product.reviewCount} Verified Reviews
+                </span>
+              </div>
+
+              {/* Pricing Box */}
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8">
+                <div className="flex items-baseline gap-3 mb-2">
+                  <span className="text-4xl font-display font-bold text-slate-900">₹{product.discountedPrice}</span>
+                  {product.discount > 0 && (
+                    <>
+                      <span className="text-xl text-slate-400 line-through">₹{product.price}</span>
+                      <span className="text-sm font-bold text-green-600 bg-green-100 px-2 py-1 rounded">Save ₹{savings}</span>
+                    </>
+                  )}
+                </div>
+                <p className="text-sm text-slate-500 mb-4">Inclusive of all taxes. No hidden charges.</p>
+                
+                {/* Bank Offers Mock */}
+                <div className="text-sm text-slate-600 flex flex-col gap-2 border-t border-slate-200 pt-4">
+                  <div className="flex items-start gap-2">
+                    <Tag className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                    <p><span className="font-semibold text-slate-900">Bank Offer:</span> 5% Unlimited Cashback on Flipkart Axis Bank Credit Card</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Tag className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                    <p><span className="font-semibold text-slate-900">Special Price:</span> Get extra 10% off (price inclusive of cashback/coupon)</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Delivery & Services */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div className="flex flex-col items-center text-center gap-2 p-3 bg-white border border-slate-200 rounded-xl">
+                  <Truck className="w-6 h-6 text-primary-600" />
+                  <span className="text-xs font-semibold text-slate-700">Free Delivery</span>
+                </div>
+                <div className="flex flex-col items-center text-center gap-2 p-3 bg-white border border-slate-200 rounded-xl">
+                  <ShieldCheck className="w-6 h-6 text-primary-600" />
+                  <span className="text-xs font-semibold text-slate-700">1 Year Warranty</span>
+                </div>
+                <div className="flex flex-col items-center text-center gap-2 p-3 bg-white border border-slate-200 rounded-xl">
+                  <RefreshCcw className="w-6 h-6 text-primary-600" />
+                  <span className="text-xs font-semibold text-slate-700">30 Day Return</span>
+                </div>
+                <div className="flex flex-col items-center text-center gap-2 p-3 bg-white border border-slate-200 rounded-xl">
+                  <CheckCircle className="w-6 h-6 text-primary-600" />
+                  <span className="text-xs font-semibold text-slate-700">100% Authentic</span>
+                </div>
+              </div>
+
+              <div className="mt-auto">
+                <div className="flex items-center gap-4 mb-6">
+                  {/* Quantity */}
+                  <div className="flex items-center border-2 border-slate-200 rounded-xl overflow-hidden h-14 bg-white shrink-0">
+                    <button 
+                      onClick={() => setQuantity(q => Math.max(1, q - 1))} 
+                      className="w-12 h-full flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <span className="w-12 text-center font-bold text-lg text-slate-900">{quantity}</span>
+                    <button 
+                      onClick={() => setQuantity(q => Math.min(product.stock, q + 1))} 
+                      className="w-12 h-full flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  {product.stock <= 10 && product.stock > 0 && (
+                    <span className="text-orange-600 text-sm font-bold flex items-center gap-1 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-200">
+                      <Zap className="w-4 h-4 fill-current" /> Only {product.stock} left in stock!
+                    </span>
+                  )}
+                  {product.stock === 0 && (
+                    <span className="text-red-600 font-bold bg-red-50 px-4 py-2 rounded-lg border border-red-200">Out of Stock</span>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => handleAddToCart(false)}
+                    disabled={isAddingToCart || product.stock === 0}
+                    className="flex-1 bg-white border-2 border-primary-600 text-primary-600 h-14 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary-50 transition-colors disabled:opacity-50"
+                  >
+                    <ShoppingBag className="w-5 h-5" /> 
+                    {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+                  </button>
+                  <button 
+                    onClick={() => handleAddToCart(true)}
+                    disabled={isAddingToCart || product.stock === 0}
+                    className="flex-1 bg-primary-600 text-white h-14 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary-700 shadow-lg shadow-primary-600/30 transition-all disabled:opacity-50"
+                  >
+                    Buy Now
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <span style={styles.ratingText}>
-            {product.averageRating} ({product.reviewCount} reviews)
-          </span>
         </div>
 
-        {/* Price section */}
-        <div style={styles.priceSection}>
-          <span style={styles.mainPrice}>₹{product.discountedPrice}</span>
-          {product.discount > 0 && (
-            <>
-              <span style={styles.originalPrice}>₹{product.price}</span>
-              <span style={styles.savingsBadge}>Save ₹{savings}</span>
-            </>
-          )}
-        </div>
-        <p style={styles.taxNote}>Inclusive of all taxes • Free delivery on orders above ₹500</p>
+        {/* ====== DETAILED SECTIONS ====== */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+          <div className="lg:col-span-2 space-y-8">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+              <h3 className="text-xl font-display font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <div className="w-1.5 h-6 bg-accent rounded-full"></div>
+                Product Description
+              </h3>
+              <p className="text-slate-600 leading-relaxed whitespace-pre-line text-lg font-light">
+                {product.description}
+              </p>
+            </div>
 
-        {/* Description */}
-        <div style={styles.descSection}>
-          <h3 style={styles.sectionTitle}>About this product</h3>
-          <p style={styles.description}>{product.description}</p>
-        </div>
-
-        {/* Feature pills */}
-        <div style={styles.featureRow}>
-          {product.isTrending && <span style={{ ...styles.featurePill, background: '#fef3c7', color: '#92400e' }}>🔥 Trending</span>}
-          {product.isBestSeller && <span style={{ ...styles.featurePill, background: '#dcfce7', color: '#166534' }}>⭐ Best Seller</span>}
-          {product.isNewArrival && <span style={{ ...styles.featurePill, background: '#e0e7ff', color: '#3730a3' }}>✨ New Arrival</span>}
-        </div>
-
-        {/* Guarantees */}
-        <div style={styles.guaranteesRow}>
-          <div style={styles.guarantee}>
-            <ShieldCheck size={20} color="#16a34a" />
-            <span>100% Authentic</span>
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+              <h3 className="text-xl font-display font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <div className="w-1.5 h-6 bg-accent rounded-full"></div>
+                Specifications
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                <div className="flex justify-between py-3 border-b border-slate-100">
+                  <span className="text-slate-500">Brand</span>
+                  <span className="font-medium text-slate-900">The_Skj_Hub</span>
+                </div>
+                <div className="flex justify-between py-3 border-b border-slate-100">
+                  <span className="text-slate-500">Material</span>
+                  <span className="font-medium text-slate-900">Premium Alloy</span>
+                </div>
+                <div className="flex justify-between py-3 border-b border-slate-100">
+                  <span className="text-slate-500">Occasion</span>
+                  <span className="font-medium text-slate-900">Bridal, Party, Ethnic</span>
+                </div>
+                <div className="flex justify-between py-3 border-b border-slate-100">
+                  <span className="text-slate-500">Color</span>
+                  <span className="font-medium text-slate-900">Gold Plated</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div style={styles.guarantee}>
-            <Truck size={20} color="#2563eb" />
-            <span>Fast Delivery</span>
-          </div>
-          <div style={styles.guarantee}>
-            <Package size={20} color="#9333ea" />
-            <span>Easy Returns</span>
-          </div>
-        </div>
 
-        {/* Quantity + Add to Cart */}
-        <div style={styles.actionSection}>
-          {/* Quantity Selector */}
-          <div style={styles.qtySection}>
-            <span style={styles.qtyLabel}>Qty</span>
-            <div style={styles.qtyControl}>
-              <button onClick={() => setQuantity(q => Math.max(1, q - 1))} style={styles.qtyBtn}>
-                <Minus size={16} />
-              </button>
-              <span style={styles.qtyValue}>{quantity}</span>
-              <button onClick={() => setQuantity(q => Math.min(product.stock, q + 1))} style={styles.qtyBtn}>
-                <Plus size={16} />
+          {/* Frequently Bought Together Mock */}
+          <div className="lg:col-span-1">
+            <div className="bg-slate-900 rounded-2xl shadow-xl border border-slate-800 p-6 text-white sticky top-24">
+              <h3 className="text-lg font-display font-bold mb-6 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-accent fill-accent" />
+                Frequently Bought Together
+              </h3>
+              
+              <div className="space-y-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <img src={product.imageUrl} alt={product.name} className="w-16 h-16 rounded-lg object-cover bg-white" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium line-clamp-1">{product.name}</p>
+                    <p className="font-bold text-accent">₹{product.discountedPrice}</p>
+                  </div>
+                  <CheckCircle className="w-5 h-5 text-accent" />
+                </div>
+                <div className="flex justify-center"><Plus className="text-slate-500" /></div>
+                <div className="flex items-center gap-3 opacity-80">
+                  <div className="w-16 h-16 rounded-lg bg-slate-800 flex items-center justify-center">
+                    <Package className="w-6 h-6 text-slate-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium line-clamp-1">Premium Velvet Box</p>
+                    <p className="font-bold text-slate-300">₹299</p>
+                  </div>
+                  <div className="w-5 h-5 rounded-full border border-slate-500"></div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-700 pt-4 mb-6">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-slate-400">Total Price:</span>
+                  <span className="text-2xl font-bold text-white">₹{(product.discountedPrice + 299).toFixed(2)}</span>
+                </div>
+                <p className="text-xs text-green-400 text-right">Save ₹50 on bundle</p>
+              </div>
+
+              <button className="w-full bg-accent text-slate-900 font-bold py-3 rounded-xl hover:bg-white transition-colors">
+                Add Bundle To Cart
               </button>
             </div>
-            <span style={styles.stockLabel}>{product.stock} in stock</span>
           </div>
-
-          {/* Add to Cart Button */}
-          <button
-            onClick={handleAddToCart}
-            disabled={isAddingToCart || product.stock === 0}
-            style={{
-              ...styles.addToCartBtn,
-              background: product.stock === 0
-                ? '#94a3b8'
-                : addedToCart
-                  ? '#16a34a'
-                  : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-              transform: isAddingToCart ? 'scale(0.97)' : 'scale(1)',
-            }}
-          >
-            <ShoppingBag size={22} />
-            {product.stock === 0 ? 'Out of Stock' : isAddingToCart ? 'Adding...' : addedToCart ? '✓ Added to Cart!' : 'Add to Cart'}
-          </button>
         </div>
-      </div>
 
-      <style>{`
-        @keyframes slideUp {
-          from { transform: translateY(60px); opacity: 0; }
-          to   { transform: translateY(0);    opacity: 1; }
-        }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+        {/* ====== SIMILAR PRODUCTS ====== */}
+        {similarProducts.length > 0 && (
+          <div className="mb-16">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-display font-bold text-slate-900">Similar Products</h2>
+              <Link to={`/products?category=${product.categoryName}`} className="text-primary-600 font-bold text-sm uppercase tracking-wider hover:underline">View All</Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {similarProducts.map(item => (
+                <Link key={item.productId} to={`/products/${item.productId}`} className="bg-white rounded-xl border border-slate-200 overflow-hidden group hover:shadow-xl transition-all">
+                  <div className="relative h-64 bg-slate-100 overflow-hidden">
+                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover mix-blend-multiply group-hover:scale-110 transition-transform duration-700" />
+                  </div>
+                  <div className="p-4 text-center">
+                    <h3 className="font-bold text-slate-900 mb-1 truncate">{item.name}</h3>
+                    <p className="font-bold text-primary-600">₹{item.discountedPrice}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </div>
     </div>
   );
-};
-
-const styles = {
-  page: {
-    minHeight: '100vh',
-    background: '#f8fafc',
-    position: 'relative',
-    overflowX: 'hidden',
-  },
-  loadingScreen: {
-    minHeight: '80vh',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-    background: '#f8fafc',
-  },
-  loadingSpinner: {
-    width: 44,
-    height: 44,
-    border: '3px solid #e2e8f0',
-    borderTop: '3px solid #6366f1',
-    borderRadius: '50%',
-    animation: 'spin 0.8s linear infinite',
-  },
-  loadingText: { color: '#64748b', fontSize: 16 },
-  backBtnAlt: {
-    marginTop: 16,
-    padding: '10px 24px',
-    background: '#6366f1',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 12,
-    cursor: 'pointer',
-    fontSize: 14,
-  },
-
-  // Hero
-  heroSection: {
-    position: 'relative',
-    width: '100%',
-    aspectRatio: '3 / 4',
-    maxHeight: '88vh',
-    background: '#111827',
-    overflow: 'hidden',
-  },
-  heroImgWrap: {
-    position: 'absolute',
-    inset: 0,
-  },
-  heroImg: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'contain',
-    objectPosition: 'center top',
-    transition: 'opacity 0.4s ease',
-  },
-  imgSkeleton: {
-    position: 'absolute',
-    inset: 0,
-    background: 'linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%)',
-  },
-  heroGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '40%',
-    background: 'linear-gradient(to bottom, transparent, rgba(15,15,35,0.6))',
-  },
-  backBtn: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    zIndex: 10,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    padding: '8px 16px',
-    background: 'rgba(255,255,255,0.9)',
-    backdropFilter: 'blur(8px)',
-    border: 'none',
-    borderRadius: 100,
-    cursor: 'pointer',
-    fontWeight: 600,
-    fontSize: 14,
-    color: '#1e293b',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
-    transition: 'background 0.2s',
-  },
-  wishBtn: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    zIndex: 10,
-    width: 44,
-    height: 44,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backdropFilter: 'blur(8px)',
-    border: 'none',
-    borderRadius: '50%',
-    cursor: 'pointer',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
-    transition: 'all 0.25s',
-  },
-  discountBadge: {
-    position: 'absolute',
-    bottom: 80,
-    left: 20,
-    zIndex: 5,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 5,
-    padding: '5px 12px',
-    background: '#ef4444',
-    color: '#fff',
-    borderRadius: 100,
-    fontSize: 13,
-    fontWeight: 700,
-  },
-  stockBadge: {
-    position: 'absolute',
-    bottom: 80,
-    right: 20,
-    zIndex: 5,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 5,
-    padding: '5px 12px',
-    background: '#f59e0b',
-    color: '#fff',
-    borderRadius: 100,
-    fontSize: 12,
-    fontWeight: 700,
-  },
-
-  // Details panel
-  detailsPanel: {
-    position: 'relative',
-    zIndex: 2,
-    background: '#fff',
-    borderRadius: '24px 24px 0 0',
-    marginTop: -24,
-    padding: '28px 20px 100px',
-    animation: 'slideUp 0.4s ease',
-    maxWidth: 860,
-    margin: '-24px auto 0',
-    boxShadow: '0 -4px 30px rgba(0,0,0,0.08)',
-  },
-  categoryPill: {
-    display: 'inline-block',
-    padding: '4px 14px',
-    background: '#ede9fe',
-    color: '#6d28d9',
-    borderRadius: 100,
-    fontSize: 12,
-    fontWeight: 600,
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    marginBottom: 12,
-  },
-  productName: {
-    fontSize: 'clamp(22px, 5vw, 32px)',
-    fontWeight: 800,
-    color: '#0f172a',
-    lineHeight: 1.25,
-    marginBottom: 12,
-  },
-  ratingRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
-  },
-  stars: { display: 'flex', gap: 2 },
-  ratingText: { fontSize: 13, color: '#64748b' },
-
-  priceSection: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 6,
-    flexWrap: 'wrap',
-  },
-  mainPrice: {
-    fontSize: 'clamp(28px, 6vw, 40px)',
-    fontWeight: 800,
-    color: '#0f172a',
-  },
-  originalPrice: {
-    fontSize: 20,
-    color: '#94a3b8',
-    textDecoration: 'line-through',
-  },
-  savingsBadge: {
-    padding: '4px 12px',
-    background: '#dcfce7',
-    color: '#16a34a',
-    borderRadius: 100,
-    fontSize: 13,
-    fontWeight: 700,
-  },
-  taxNote: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginBottom: 24,
-  },
-  descSection: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: 700,
-    color: '#1e293b',
-    marginBottom: 8,
-  },
-  description: {
-    fontSize: 14,
-    color: '#475569',
-    lineHeight: 1.7,
-  },
-  featureRow: {
-    display: 'flex',
-    gap: 8,
-    flexWrap: 'wrap',
-    marginBottom: 20,
-  },
-  featurePill: {
-    padding: '5px 14px',
-    borderRadius: 100,
-    fontSize: 13,
-    fontWeight: 600,
-  },
-  guaranteesRow: {
-    display: 'flex',
-    gap: 12,
-    marginBottom: 28,
-    flexWrap: 'wrap',
-  },
-  guarantee: {
-    flex: '1 1 100px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: '10px 14px',
-    background: '#f8fafc',
-    borderRadius: 12,
-    fontSize: 13,
-    color: '#334155',
-    fontWeight: 500,
-    border: '1px solid #e2e8f0',
-  },
-
-  // Actions
-  actionSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 14,
-  },
-  qtySection: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 14,
-  },
-  qtyLabel: {
-    fontSize: 14,
-    fontWeight: 600,
-    color: '#374151',
-    minWidth: 28,
-  },
-  qtyControl: {
-    display: 'flex',
-    alignItems: 'center',
-    border: '1.5px solid #e2e8f0',
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  qtyBtn: {
-    width: 40,
-    height: 40,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#f8fafc',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#475569',
-    transition: 'background 0.15s',
-  },
-  qtyValue: {
-    width: 44,
-    textAlign: 'center',
-    fontWeight: 700,
-    fontSize: 16,
-    color: '#0f172a',
-  },
-  stockLabel: {
-    fontSize: 13,
-    color: '#94a3b8',
-  },
-  addToCartBtn: {
-    width: '100%',
-    padding: '16px 24px',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 16,
-    fontSize: 17,
-    fontWeight: 700,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    boxShadow: '0 4px 20px rgba(99,102,241,0.35)',
-    transition: 'all 0.25s ease',
-    letterSpacing: '0.3px',
-  },
 };
 
 export default ProductDetail;

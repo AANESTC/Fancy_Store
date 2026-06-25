@@ -147,7 +147,7 @@ const Home = () => {
               <p className="text-slate-400 leading-relaxed mb-10 font-light">
                 Our invisible setting techniques and intricate traditional filigree work seamlessly blend modern luxury with timeless traditions. Discover the artistry that goes into every facet.
               </p>
-              <Link to="/about" className="inline-block border border-white px-10 py-4 text-sm font-bold tracking-widest uppercase hover:bg-white hover:text-slate-900 transition-colors">
+              <Link to="/our-story" className="inline-block border border-white px-10 py-4 text-sm font-bold tracking-widest uppercase hover:bg-white hover:text-slate-900 transition-colors">
                 Discover Our Story
               </Link>
             </div>

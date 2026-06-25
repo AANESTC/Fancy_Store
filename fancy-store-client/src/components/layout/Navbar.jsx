@@ -48,6 +48,7 @@ const Navbar = () => {
             <Link to="/products?category=chains" className="text-[11px] font-bold tracking-[0.2em] uppercase text-slate-900 hover:text-accent transition-colors">Chains</Link>
             <Link to="/products?category=hair-clips" className="text-[11px] font-bold tracking-[0.2em] uppercase text-slate-900 hover:text-accent transition-colors">Hair Clips</Link>
             <Link to="/products" className="text-[11px] font-bold tracking-[0.2em] uppercase text-slate-900 hover:text-accent transition-colors">Boutique</Link>
+            <Link to="/our-story" className="text-[11px] font-bold tracking-[0.2em] uppercase text-slate-900 hover:text-accent transition-colors">Our Story</Link>
           </div>
 
           {/* Right Side Icons */}
@@ -108,6 +109,7 @@ const Navbar = () => {
             <Link to="/products?category=chains" className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary-600 hover:bg-slate-50">Chains</Link>
             <Link to="/products?category=hair-clips" className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary-600 hover:bg-slate-50">Hair Clips</Link>
             <Link to="/products" className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary-600 hover:bg-slate-50">All Products</Link>
+            <Link to="/our-story" className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-primary-600 hover:bg-slate-50">Our Story</Link>
           </div>
         </div>
       )}
