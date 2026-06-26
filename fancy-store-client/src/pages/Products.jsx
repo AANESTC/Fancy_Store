@@ -16,6 +16,8 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addingId, setAddingId] = useState(null);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   
   // Filter states
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -56,12 +58,15 @@ const Products = () => {
     try {
       // Build query string from searchParams
       const query = new URLSearchParams(searchParams).toString();
-      const response = await api.get(`/products?${query}`);
+      const response = await api.get(`/products?${query}&pageSize=1000`);
       
       if (response.data && response.data.products) {
         setProducts(response.data.products);
+        setTotalPages(response.data.totalPages || 1);
+        setTotalCount(response.data.totalCount || response.data.products.length);
       } else {
         setProducts([]);
+        setTotalCount(0);
       }
     } catch (error) {
       console.error("Failed to fetch products:", error);
@@ -151,6 +156,21 @@ const Products = () => {
     return min === String(expectedMin) && max === String(expectedMax);
   };
 
+  const handleSort = (e) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('sortBy', e.target.value);
+    setSearchParams(newParams);
+  };
+
+  const handlePage = (newPage) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('page', newPage);
+    setSearchParams(newParams);
+  };
+
+  const currentPage = Number(searchParams.get('page')) || 1;
+  const currentSort = searchParams.get('sortBy') || 'newest';
+
   return (
     <div className="bg-slate-50 min-h-screen pb-20">
       {/* Page Header */}
@@ -159,7 +179,7 @@ const Products = () => {
           <h1 className="text-3xl md:text-4xl font-display font-bold text-slate-900 capitalize">
             {category ? category.replace('-', ' ') : 'All Products'}
           </h1>
-          <p className="text-slate-500 mt-2">Showing {products.length} elegant items</p>
+          <p className="text-slate-500 mt-2">Showing {totalCount} elegant items</p>
         </div>
       </div>
 
@@ -228,11 +248,11 @@ const Products = () => {
           {/* Sorting Top Bar */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex justify-between items-center hidden md:flex">
             <span className="text-sm text-slate-500">Sort by:</span>
-            <select className="border-none text-sm font-medium text-slate-700 bg-transparent focus:ring-0 cursor-pointer">
-              <option>Recommended</option>
-              <option>Price: Low to High</option>
-              <option>Price: High to Low</option>
-              <option>Newest Arrivals</option>
+            <select value={currentSort} onChange={handleSort} className="border-none text-sm font-medium text-slate-700 bg-transparent focus:ring-0 cursor-pointer">
+              <option value="newest">Newest Arrivals</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="popularity">Popularity</option>
             </select>
           </div>
 
@@ -310,6 +330,8 @@ const Products = () => {
               ))}
             </div>
           )}
+
+
         </div>
       </div>
     </div>

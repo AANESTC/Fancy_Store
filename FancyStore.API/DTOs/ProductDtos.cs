@@ -23,6 +23,16 @@ public class ProductDto
     public double AverageRating { get; set; }
     public int ReviewCount { get; set; }
     public DateTime CreatedAt { get; set; }
+    public List<ProductImageDto> Images { get; set; } = new();
+}
+
+public class ProductImageDto
+{
+    public int ProductImageId { get; set; }
+    public int ProductId { get; set; }
+    public string ImageUrl { get; set; } = string.Empty;
+    public int DisplayOrder { get; set; }
+    public int RotationAngle { get; set; }
 }
 
 

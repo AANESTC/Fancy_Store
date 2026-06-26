@@ -22,6 +22,7 @@ public class ProductsController : ControllerBase
         var query = _context.Products
             .Include(p => p.Category)
             .Include(p => p.Reviews)
+            .Include(p => p.Images)
             .Where(p => p.IsActive);
 
         if (filter.CategoryId.HasValue)
@@ -41,6 +42,16 @@ public class ProductsController : ControllerBase
 
         if (!string.IsNullOrEmpty(filter.SearchKeyword))
             query = query.Where(p => p.Name.Contains(filter.SearchKeyword) || p.Description.Contains(filter.SearchKeyword));
+
+        // Sorting
+        query = filter.SortBy switch
+        {
+            "price_asc" => query.OrderBy(p => p.Price - (p.Price * p.Discount / 100)),
+            "price_desc" => query.OrderByDescending(p => p.Price - (p.Price * p.Discount / 100)),
+            "newest" => query.OrderByDescending(p => p.CreatedAt),
+            "popularity" => query.OrderByDescending(p => p.Reviews.Count),
+            _ => query.OrderByDescending(p => p.CreatedAt) // Default sorting
+        };
 
         var totalCount = await query.CountAsync();
 
@@ -64,7 +75,15 @@ public class ProductsController : ControllerBase
                 IsBestSeller = p.IsBestSeller,
                 IsNewArrival = p.IsNewArrival,
                 AverageRating = p.Reviews.Any(r => r.IsApproved) ? p.Reviews.Where(r => r.IsApproved).Average(r => r.Rating) : 0,
-                ReviewCount = p.Reviews.Count(r => r.IsApproved)
+                ReviewCount = p.Reviews.Count(r => r.IsApproved),
+                Images = p.Images.OrderBy(i => i.DisplayOrder).Select(i => new ProductImageDto
+                {
+                    ProductImageId = i.ProductImageId,
+                    ProductId = i.ProductId,
+                    ImageUrl = i.ImageUrl,
+                    DisplayOrder = i.DisplayOrder,
+                    RotationAngle = i.RotationAngle
+                }).ToList()
             })
             .ToListAsync();
 
@@ -84,6 +103,7 @@ public class ProductsController : ControllerBase
         var p = await _context.Products
             .Include(p => p.Category)
             .Include(p => p.Reviews)
+            .Include(p => p.Images)
             .FirstOrDefaultAsync(p => p.ProductId == id && p.IsActive);
 
         if (p == null) return NotFound();
@@ -104,7 +124,15 @@ public class ProductsController : ControllerBase
             IsBestSeller = p.IsBestSeller,
             IsNewArrival = p.IsNewArrival,
             AverageRating = p.Reviews.Any(r => r.IsApproved) ? p.Reviews.Where(r => r.IsApproved).Average(r => r.Rating) : 0,
-            ReviewCount = p.Reviews.Count(r => r.IsApproved)
+            ReviewCount = p.Reviews.Count(r => r.IsApproved),
+            Images = p.Images.OrderBy(i => i.DisplayOrder).Select(i => new ProductImageDto
+            {
+                ProductImageId = i.ProductImageId,
+                ProductId = i.ProductId,
+                ImageUrl = i.ImageUrl,
+                DisplayOrder = i.DisplayOrder,
+                RotationAngle = i.RotationAngle
+            }).ToList()
         });
     }
 }
