@@ -25,7 +25,6 @@ public class Product
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     public ICollection<Wishlist> Wishlists { get; set; } = new List<Wishlist>();
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
-    public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
 
     public decimal DiscountedPrice => Price - (Price * Discount / 100);
 }

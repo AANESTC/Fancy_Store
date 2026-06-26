@@ -17,14 +17,6 @@ public class AdminProductDto
     public bool IsBestSeller { get; set; }
     public bool IsNewArrival { get; set; }
     public DateTime CreatedAt { get; set; }
-    public List<ProductImageDto> Images { get; set; } = new();
-}
-
-public class CreateProductImageDto
-{
-    public string ImageUrl { get; set; } = string.Empty;
-    public int DisplayOrder { get; set; }
-    public int RotationAngle { get; set; }
 }
 
 public class CreateProductDto
@@ -40,7 +32,6 @@ public class CreateProductDto
     public bool IsTrending { get; set; } = false;
     public bool IsBestSeller { get; set; } = false;
     public bool IsNewArrival { get; set; } = false;
-    public List<CreateProductImageDto> Images { get; set; } = new();
 }
 
 public class AdminCategoryDto

@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 const defaultForm = {
   name: '', categoryId: '', description: '', price: '', discount: '0',
-  stock: '0', imageUrl: '', images: [], isActive: true, isTrending: false,
+  stock: '0', imageUrl: '', isActive: true, isTrending: false,
   isBestSeller: false, isNewArrival: false
 };
 
@@ -54,7 +54,7 @@ const AdminProducts = () => {
     setForm({
       name: p.name, categoryId: p.categoryId, description: p.description,
       price: p.price, discount: p.discount, stock: p.stock,
-      imageUrl: p.imageUrl || '', images: p.images || [], isActive: p.isActive,
+      imageUrl: p.imageUrl || '', isActive: p.isActive,
       isTrending: p.isTrending, isBestSeller: p.isBestSeller,
       isNewArrival: p.isNewArrival
     });
@@ -68,55 +68,28 @@ const AdminProducts = () => {
   };
 
   const handleImageUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
-    
-    if (form.images.length + files.length > 10) {
-      return toast.error('Maximum 10 images allowed.');
-    }
-
+    const file = e.target.files[0];
+    if (!file) return;
     setUploading(true);
     try {
-      const newImages = [...form.images];
-      for (const file of files) {
-        const fd = new FormData();
-        fd.append('file', file);
-        const res = await api.post('/admin/upload', fd, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        newImages.push({ imageUrl: res.data.url, displayOrder: newImages.length, rotationAngle: newImages.length * 90 });
-      }
-      
-      setForm(prev => ({ 
-        ...prev, 
-        images: newImages, 
-        imageUrl: prev.imageUrl || newImages[0]?.imageUrl // Set first as main if empty
-      }));
-      toast.success('Images uploaded');
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await api.post('/admin/upload', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setForm(prev => ({ ...prev, imageUrl: res.data.url }));
+      toast.success('Image uploaded');
     } catch {
-      toast.error('Upload failed.');
+      toast.error('Upload failed. Using URL instead.');
     } finally {
       setUploading(false);
     }
-  };
-
-  const removeImage = (index) => {
-    const newImages = [...form.images];
-    newImages.splice(index, 1);
-    setForm({ ...form, images: newImages, imageUrl: newImages.length > 0 ? newImages[0].imageUrl : '' });
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     if (!form.name || !form.categoryId || !form.price)
       return toast.error('Name, category and price are required');
-
-    if (form.images.length < 1)
-      return toast.error('Minimum 1 image required');
-
-    const wordCount = form.description.trim().split(/\s+/).length;
-    if (wordCount > 500)
-      return toast.error('Description cannot exceed 500 words.');
 
     setSaving(true);
     try {
@@ -332,25 +305,31 @@ const AdminProducts = () => {
 
               {/* Image */}
               <div className="form-group">
-                <label className="form-label">Product Images (Min 1, Max 10)</label>
+                <label className="form-label">Product Image</label>
                 <div className="image-upload-area">
-                  <div className="image-previews-container" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    {form.images.map((img, index) => (
-                      <div key={index} className="image-preview-wrap">
-                        <img src={img.imageUrl} alt="Preview" className="image-preview" onError={(e) => { e.target.src = 'https://via.placeholder.com/120'; }} />
-                        <button type="button" className="image-remove" onClick={() => removeImage(index)}>
-                          <X size={14} />
-                        </button>
-                        {form.imageUrl === img.imageUrl && <div style={{position: 'absolute', bottom: 5, left: 5, background: '#6366f1', color: '#fff', fontSize: 10, padding: '2px 5px', borderRadius: 4}}>Main</div>}
-                      </div>
-                    ))}
-                  </div>
+                  {form.imageUrl && (
+                    <div className="image-preview-wrap">
+                      <img src={form.imageUrl} alt="Preview" className="image-preview" onError={(e) => { e.target.src = 'https://via.placeholder.com/120'; }} />
+                      <button type="button" className="image-remove" onClick={() => setForm({ ...form, imageUrl: '' })}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
                   <div className="image-upload-right">
                     <label className="upload-file-btn" htmlFor="prod-image-file">
                       <Upload size={16} />
-                      {uploading ? 'Uploading...' : 'Upload Images'}
-                      <input id="prod-image-file" type="file" accept="image/*" multiple onChange={handleImageUpload} style={{ display: 'none' }} />
+                      {uploading ? 'Uploading...' : 'Upload Image'}
+                      <input id="prod-image-file" type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
                     </label>
+                    <span className="upload-or">or</span>
+                    <input
+                      name="imageUrl"
+                      value={form.imageUrl}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="Paste image URL..."
+                      id="prod-image-url"
+                    />
                   </div>
                 </div>
               </div>

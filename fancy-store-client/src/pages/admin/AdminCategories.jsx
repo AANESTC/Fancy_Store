@@ -57,10 +57,7 @@ const AdminCategories = () => {
       else { await api.post('/admin/categories', form); toast.success('Category created'); }
       setModalOpen(false);
       fetchCategories();
-    } catch (err) { 
-      console.error(err);
-      toast.error(err.response?.data?.message || err.message || 'Failed to save category'); 
-    }
+    } catch { toast.error('Failed to save category'); }
     finally { setSaving(false); }
   };
 

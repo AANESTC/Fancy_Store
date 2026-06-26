@@ -5,47 +5,36 @@ import { ArrowRight, Truck, ShieldCheck, RefreshCw, Star, PlayCircle, Mail } fro
 import api from '../services/api';
 
 const Home = () => {
-  const trending = [
-    {
-      productId: 1,
-      name: "Rose Gold Bangles",
-      imageUrl: "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?w=800&auto=format&fit=crop",
-      categoryName: "Bangles"
-    },
-    {
-      productId: 2,
-      name: "Diamond Chain",
-      imageUrl: "http://localhost:5126/uploads/products/de8a29a0-dca9-4e00-85b6-8f25ae209eb3.jpeg",
-      categoryName: "Chains"
-    },
-    {
-      productId: 3,
-      name: "Crystal Hair Clip",
-      imageUrl: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=800&auto=format&fit=crop",
-      categoryName: "Hair Accessories"
-    },
-    {
-      productId: 4,
-      name: "Ruby Drop Earrings",
-      imageUrl: "https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?w=800&auto=format&fit=crop",
-      categoryName: "Earrings"
-    }
-  ];
+  const [trending, setTrending] = useState([]);
+
+  useEffect(() => {
+    const fetchTrending = async () => {
+      try {
+        const res = await api.get('/products?pageSize=4');
+        if (res.data && res.data.products) {
+          setTrending(res.data.products);
+        }
+      } catch (err) {
+        console.error("Failed to load trending", err);
+      }
+    };
+    fetchTrending();
+  }, []);
 
   return (
     <div className="w-full bg-white overflow-hidden">
       {/* Premium Hero Section */}
       <section className="relative h-[90vh] flex items-center overflow-hidden bg-slate-900">
         <div className="absolute inset-0 z-0">
-          <img
-            src="/images/hero.png"
-            alt="Hero Jewelry"
+          <img 
+            src="/images/hero.png" 
+            alt="Hero Jewelry" 
             className="w-full h-full object-cover opacity-50 scale-105 transform origin-center animate-[pulse_20s_ease-in-out_infinite]"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 via-slate-900/40 to-transparent" />
         </div>
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <motion.div
+          <motion.div 
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1, ease: "easeOut" }}
@@ -56,7 +45,7 @@ const Home = () => {
               <span className="text-accent font-medium tracking-[0.2em] uppercase text-xs">Exquisite Collection 2024</span>
             </div>
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-light text-white leading-tight mb-8">
-              Redefining <br /> <span className="font-bold">Elegance.</span>
+              Redefining <br/> <span className="font-bold">Elegance.</span>
             </h1>
             <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-xl leading-relaxed font-light">
               Discover masterpieces crafted with precision. Elevate your presence with our exclusive bridal bangles, invisible chains, and diamond hair clips.
@@ -110,7 +99,7 @@ const Home = () => {
               View All <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
-
+          
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {trending.length > 0 ? (
               trending.map((item) => (
@@ -124,10 +113,7 @@ const Home = () => {
                       </button>
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <span className="text-xs font-medium text-primary-600 block mb-1">{item.categoryName}</span>
-                    <h3 className="font-display font-bold text-lg text-slate-900 group-hover:text-primary-600 transition-colors">{item.name}</h3>
-                  </div>
+                  <h3 className="font-display font-bold text-lg text-slate-900 group-hover:text-primary-600 transition-colors">{item.name}</h3>
 
                 </Link>
               ))
@@ -143,9 +129,9 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="relative h-[600px]">
-              <img
-                src="/images/craftsmanship.png"
-                alt="Jewelry Craftsmanship"
+              <img 
+                src="/images/craftsmanship.png" 
+                alt="Jewelry Craftsmanship" 
                 className="w-full h-full object-cover grayscale opacity-80 hover:grayscale-0 transition-all duration-1000"
               />
               <div className="absolute -bottom-8 -right-8 w-48 h-48 bg-accent hidden lg:block -z-10"></div>
@@ -153,7 +139,7 @@ const Home = () => {
             <div>
               <span className="text-accent font-medium tracking-[0.2em] uppercase text-xs mb-4 block">Our Heritage</span>
               <h2 className="text-4xl md:text-5xl font-display font-light leading-tight mb-8">
-                Crafted with <br /> Unyielding <span className="font-bold">Precision.</span>
+                Crafted with <br/> Unyielding <span className="font-bold">Precision.</span>
               </h2>
               <p className="text-slate-300 leading-relaxed mb-6 font-light text-lg">
                 Every piece at The_Skj_Hub is born from a legacy of master craftsmen. We source only the finest ethical diamonds and pure metals, ensuring each creation is not just jewelry, but a generational heirloom.
@@ -176,7 +162,7 @@ const Home = () => {
             <span className="text-primary-600 font-medium tracking-[0.2em] uppercase text-xs mb-2 block">Collections</span>
             <h2 className="text-4xl md:text-5xl font-display font-bold text-slate-900">Explore Categories</h2>
           </div>
-
+          
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-auto md:h-[600px]">
             <Link to="/products?category=bangles" className="md:col-span-8 group relative overflow-hidden h-80 md:h-full bg-slate-200">
               <img src="https://images.unsplash.com/photo-1611591437281-460bfbe1220a?q=80&w=2070&auto=format&fit=crop" alt="Bangles" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
@@ -219,14 +205,14 @@ const Home = () => {
             Subscribe to receive insider access to private sales, exclusive new collection drops, and styling advice.
           </p>
           <form className="flex flex-col sm:flex-row gap-0 max-w-lg mx-auto">
-            <input
-              type="email"
-              placeholder="Enter your email address"
+            <input 
+              type="email" 
+              placeholder="Enter your email address" 
               className="flex-1 px-6 py-4 bg-white/10 border border-white/20 text-white placeholder:text-slate-400 focus:outline-none focus:border-accent rounded-t-lg sm:rounded-l-none sm:rounded-l-lg"
-              required
+              required 
             />
-            <button
-              type="submit"
+            <button 
+              type="submit" 
               className="px-8 py-4 bg-accent text-slate-900 font-bold uppercase tracking-widest text-sm hover:bg-white transition-colors rounded-b-lg sm:rounded-r-none sm:rounded-r-lg"
             >
               Subscribe
@@ -234,7 +220,7 @@ const Home = () => {
           </form>
         </div>
       </section>
-
+      
     </div>
   );
 };

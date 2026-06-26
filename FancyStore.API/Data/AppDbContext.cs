@@ -24,7 +24,6 @@ public class AppDbContext : DbContext
     public DbSet<Coupon> Coupons => Set<Coupon>();
     public DbSet<Banner> Banners => Set<Banner>();
     public DbSet<PriceRange> PriceRanges => Set<PriceRange>();
-    public DbSet<ProductImage> ProductImages => Set<ProductImage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,13 +35,6 @@ public class AppDbContext : DbContext
             .WithMany(c => c.Products)
             .HasForeignKey(p => p.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        // Product - ProductImage (one-to-many)
-        modelBuilder.Entity<ProductImage>()
-            .HasOne(pi => pi.Product)
-            .WithMany(p => p.Images)
-            .HasForeignKey(pi => pi.ProductId)
-            .OnDelete(DeleteBehavior.Cascade);
 
         // Order relationships (prevent multiple cascade paths)
         modelBuilder.Entity<Order>()

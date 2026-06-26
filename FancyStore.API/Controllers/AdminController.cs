@@ -115,7 +115,7 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> GetProducts([FromQuery] int page = 1, [FromQuery] int pageSize = 10,
         [FromQuery] string? search = null, [FromQuery] int? categoryId = null, [FromQuery] string? status = null)
     {
-        var query = _context.Products.Include(p => p.Category).Include(p => p.Images).AsQueryable();
+        var query = _context.Products.Include(p => p.Category).AsQueryable();
 
         if (!string.IsNullOrEmpty(search))
             query = query.Where(p => p.Name.Contains(search) || p.Description.Contains(search));
@@ -150,15 +150,7 @@ public class AdminController : ControllerBase
                 IsTrending = p.IsTrending,
                 IsBestSeller = p.IsBestSeller,
                 IsNewArrival = p.IsNewArrival,
-                CreatedAt = p.CreatedAt,
-                Images = p.Images.OrderBy(i => i.DisplayOrder).Select(i => new ProductImageDto
-                {
-                    ProductImageId = i.ProductImageId,
-                    ProductId = i.ProductId,
-                    ImageUrl = i.ImageUrl,
-                    DisplayOrder = i.DisplayOrder,
-                    RotationAngle = i.RotationAngle
-                }).ToList()
+                CreatedAt = p.CreatedAt
             })
             .ToListAsync();
 
@@ -168,7 +160,7 @@ public class AdminController : ControllerBase
     [HttpGet("products/{id}")]
     public async Task<IActionResult> GetProduct(int id)
     {
-        var p = await _context.Products.Include(p => p.Category).Include(p => p.Images).FirstOrDefaultAsync(p => p.ProductId == id);
+        var p = await _context.Products.Include(p => p.Category).FirstOrDefaultAsync(p => p.ProductId == id);
         if (p == null) return NotFound();
 
         return Ok(new AdminProductDto
@@ -187,27 +179,13 @@ public class AdminController : ControllerBase
             IsTrending = p.IsTrending,
             IsBestSeller = p.IsBestSeller,
             IsNewArrival = p.IsNewArrival,
-            CreatedAt = p.CreatedAt,
-            Images = p.Images.OrderBy(i => i.DisplayOrder).Select(i => new ProductImageDto
-            {
-                ProductImageId = i.ProductImageId,
-                ProductId = i.ProductId,
-                ImageUrl = i.ImageUrl,
-                DisplayOrder = i.DisplayOrder,
-                RotationAngle = i.RotationAngle
-            }).ToList()
+            CreatedAt = p.CreatedAt
         });
     }
 
     [HttpPost("products")]
     public async Task<IActionResult> CreateProduct([FromBody] CreateProductDto dto)
     {
-        if (dto.Images == null || dto.Images.Count < 1 || dto.Images.Count > 10)
-            return BadRequest(new { message = "Products must have between 1 and 10 images." });
-
-        if (!string.IsNullOrEmpty(dto.Description) && dto.Description.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length > 500)
-            return BadRequest(new { message = "Description cannot exceed 500 words." });
-
         var product = new Product
         {
             Name = dto.Name,
@@ -226,34 +204,13 @@ public class AdminController : ControllerBase
 
         _context.Products.Add(product);
         await _context.SaveChangesAsync();
-
-        if (dto.Images != null && dto.Images.Any())
-        {
-            var images = dto.Images.Select((img, index) => new ProductImage
-            {
-                ProductId = product.ProductId,
-                ImageUrl = img.ImageUrl,
-                DisplayOrder = img.DisplayOrder == 0 ? index : img.DisplayOrder,
-                RotationAngle = img.RotationAngle
-            }).ToList();
-            
-            _context.ProductImages.AddRange(images);
-            await _context.SaveChangesAsync();
-        }
-
         return Ok(new { message = "Product created", productId = product.ProductId });
     }
 
     [HttpPut("products/{id}")]
     public async Task<IActionResult> UpdateProduct(int id, [FromBody] CreateProductDto dto)
     {
-        if (dto.Images == null || dto.Images.Count < 1 || dto.Images.Count > 10)
-            return BadRequest(new { message = "Products must have between 1 and 10 images." });
-
-        if (!string.IsNullOrEmpty(dto.Description) && dto.Description.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length > 500)
-            return BadRequest(new { message = "Description cannot exceed 500 words." });
-
-        var product = await _context.Products.Include(p => p.Images).FirstOrDefaultAsync(p => p.ProductId == id);
+        var product = await _context.Products.FindAsync(id);
         if (product == null) return NotFound();
 
         product.Name = dto.Name;
@@ -267,21 +224,6 @@ public class AdminController : ControllerBase
         product.IsTrending = dto.IsTrending;
         product.IsBestSeller = dto.IsBestSeller;
         product.IsNewArrival = dto.IsNewArrival;
-
-        if (dto.Images != null)
-        {
-            _context.ProductImages.RemoveRange(product.Images);
-            
-            var newImages = dto.Images.Select((img, index) => new ProductImage
-            {
-                ProductId = product.ProductId,
-                ImageUrl = img.ImageUrl,
-                DisplayOrder = img.DisplayOrder == 0 ? index : img.DisplayOrder,
-                RotationAngle = img.RotationAngle
-            }).ToList();
-            
-            _context.ProductImages.AddRange(newImages);
-        }
 
         await _context.SaveChangesAsync();
         return Ok(new { message = "Product updated" });

@@ -23,11 +23,6 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [is360Mode, setIs360Mode] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [showFullDesc, setShowFullDesc] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   
   // Related products
   const [similarProducts, setSimilarProducts] = useState([]);
@@ -106,42 +101,13 @@ const ProductDetail = () => {
   const savings = product.discount > 0 ? (product.price - product.discountedPrice).toFixed(2) : 0;
   const isWishlisted = wishlistItems.some(item => item.productId === product?.productId);
 
-  const baseImages = product.images && product.images.length > 0 
-    ? [...product.images].sort((a, b) => a.displayOrder - b.displayOrder)
-    : [{ imageUrl: product.imageUrl, rotationAngle: 0 }];
-
-  const images = baseImages.length === 1 
-    ? [0, 90, 180, 270].map(angle => ({ url: baseImages[0].imageUrl, rotation: angle }))
-    : baseImages.map(i => ({ url: i.imageUrl, rotation: i.rotationAngle || 0 }));
-
-  const handleDragStart = (e) => {
-    if (!is360Mode) return;
-    setIsDragging(true);
-    setStartX(e.clientX || (e.touches && e.touches[0].clientX));
-  };
-
-  const handleDragMove = (e) => {
-    if (!isDragging || !is360Mode) return;
-    const x = e.clientX || (e.touches && e.touches[0].clientX);
-    const deltaX = x - startX;
-    if (Math.abs(deltaX) > 20) {
-      if (deltaX > 0) setActiveImage((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-      else setActiveImage((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-      setStartX(x);
-    }
-  };
-
-  const handleDragEnd = () => setIsDragging(false);
-
-  const prevImage = (e) => {
-    e.stopPropagation();
-    setActiveImage((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-  };
-
-  const nextImage = (e) => {
-    e.stopPropagation();
-    setActiveImage((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-  };
+  // Generate mock gallery since API has only one image
+  const galleryImages = [
+    product.imageUrl,
+    product.imageUrl,
+    product.imageUrl,
+    product.imageUrl
+  ];
 
   return (
     <div className="bg-slate-50 min-h-screen pb-20">
@@ -194,67 +160,24 @@ const ProductDetail = () => {
 
               {/* Thumbnail strip */}
               <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-visible pb-2 md:pb-0 hide-scrollbar md:w-24 shrink-0">
-                {images.map((img, idx) => (
+                {galleryImages.map((img, idx) => (
                   <button 
                     key={idx}
-                    onClick={() => { setActiveImage(idx); setIs360Mode(false); }}
+                    onClick={() => setActiveImage(idx)}
                     className={`w-20 h-24 md:w-full md:h-28 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${activeImage === idx ? 'border-primary-600 shadow-md scale-105' : 'border-slate-100 opacity-60 hover:opacity-100'}`}
                   >
-                    <img src={img.url} alt={`Thumbnail ${idx}`} style={{ transform: `rotate(${img.rotation}deg)` }} className="w-full h-full object-cover" />
+                    <img src={img} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
 
               {/* Main Image */}
-              <div className="flex-1 bg-slate-50 rounded-2xl overflow-hidden relative group min-h-[400px] select-none"
-                   onMouseDown={handleDragStart}
-                   onMouseMove={handleDragMove}
-                   onMouseUp={handleDragEnd}
-                   onMouseLeave={handleDragEnd}
-                   onTouchStart={handleDragStart}
-                   onTouchMove={handleDragMove}
-                   onTouchEnd={handleDragEnd}
-              >
-                <div className="absolute top-4 left-4 z-10 flex gap-2">
-                  {images.length > 1 && (
-                    <button 
-                      onClick={() => setIs360Mode(!is360Mode)} 
-                      className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-md transition-colors ${is360Mode ? 'bg-primary-600 text-white' : 'bg-white text-slate-800'}`}
-                    >
-                      {is360Mode ? 'Exit 360° View' : '360° View'}
-                    </button>
-                  )}
-                  <button onClick={() => setIsFullscreen(true)} className="px-3 py-1.5 bg-white text-slate-800 rounded-full text-xs font-bold shadow-md">
-                    Full Screen
-                  </button>
-                </div>
-                
-                {is360Mode && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-between px-4 pointer-events-none">
-                    <div className="bg-black/50 text-white text-xs px-2 py-1 rounded">Drag to Rotate</div>
-                  </div>
-                )}
-                
-                {!is360Mode && (
-                  <>
-                    <button onClick={prevImage} className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-white text-slate-700">
-                      ←
-                    </button>
-                    <button onClick={nextImage} className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-white text-slate-700">
-                      →
-                    </button>
-                  </>
-                )}
-                
-                <div className={`w-full h-full absolute inset-0 transition-transform duration-500 origin-center ${!is360Mode ? 'group-hover:scale-150 cursor-zoom-in' : 'cursor-grab active:cursor-grabbing pointer-events-none'}`}>
-                  <img 
-                    src={images[activeImage].url} 
-                    alt={product.name} 
-                    style={{ transform: `rotate(${images[activeImage].rotation}deg)` }}
-                    className="w-full h-full object-contain mix-blend-multiply transition-transform duration-300"
-                    draggable={false}
-                  />
-                </div>
+              <div className="flex-1 bg-slate-50 rounded-2xl overflow-hidden relative group cursor-zoom-in min-h-[400px]">
+                <img 
+                  src={galleryImages[activeImage]} 
+                  alt={product.name} 
+                  className="w-full h-full object-contain absolute inset-0 mix-blend-multiply group-hover:scale-150 transition-transform duration-500 origin-center"
+                />
               </div>
             </div>
 
@@ -384,17 +307,9 @@ const ProductDetail = () => {
                 <div className="w-1.5 h-6 bg-accent rounded-full"></div>
                 Product Description
               </h3>
-              <div className="text-slate-600 leading-relaxed whitespace-pre-line text-lg font-light">
-                {showFullDesc ? product.description : product.description.slice(0, 300) + (product.description.length > 300 ? '...' : '')}
-              </div>
-              {product.description.length > 300 && (
-                <button 
-                  onClick={() => setShowFullDesc(!showFullDesc)} 
-                  className="mt-4 text-primary-600 font-bold hover:underline"
-                >
-                  {showFullDesc ? 'Read Less' : 'Read More'}
-                </button>
-              )}
+              <p className="text-slate-600 leading-relaxed whitespace-pre-line text-lg font-light">
+                {product.description}
+              </p>
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
@@ -492,26 +407,6 @@ const ProductDetail = () => {
         )}
 
       </div>
-      
-      {isFullscreen && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4">
-          <button onClick={() => setIsFullscreen(false)} className="absolute top-6 right-6 text-white hover:text-red-500 p-2">
-            Close ✕
-          </button>
-          <button onClick={prevImage} className="absolute left-6 text-white hover:text-primary-400 text-4xl px-4 py-8">
-            ‹
-          </button>
-          <img src={images[activeImage].url} style={{ transform: `rotate(${images[activeImage].rotation}deg)` }} className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl" />
-          <button onClick={nextImage} className="absolute right-6 text-white hover:text-primary-400 text-4xl px-4 py-8">
-            ›
-          </button>
-          <div className="absolute bottom-6 flex gap-2 overflow-x-auto max-w-2xl px-4 py-2 bg-black/50 rounded-xl backdrop-blur-sm">
-            {images.map((img, idx) => (
-              <img key={idx} src={img.url} style={{ transform: `rotate(${img.rotation}deg)` }} onClick={() => setActiveImage(idx)} className={`w-16 h-16 object-cover rounded cursor-pointer border-2 ${activeImage === idx ? 'border-primary-500' : 'border-transparent opacity-50'}`} />
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
