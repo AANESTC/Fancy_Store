@@ -25,7 +25,7 @@ const AdminProducts = () => {
   const fetchProducts = async (p = page, s = search) => {
     setLoading(true);
     try {
-      const res = await api.get(`/admin/products?page=${p}&pageSize=10&search=${s}`);
+      const res = await api.get(`/admin/products?page=${p}&pageSize=50&search=${s}`);
       setProducts(res.data.products);
       setTotalPages(res.data.totalPages);
     } catch {
@@ -285,7 +285,7 @@ const AdminProducts = () => {
 
               <div className="form-group">
                 <label className="form-label">Description *</label>
-                <textarea name="description" value={form.description} onChange={handleChange} required className="form-input form-textarea" rows={3} placeholder="Product description..." id="prod-desc" />
+                <textarea name="description" value={form.description} onChange={handleChange} required className="form-input form-textarea" rows={8} maxLength={3000} placeholder="Product description (up to 500 words)..." id="prod-desc" />
               </div>
 
               <div className="form-grid-3">

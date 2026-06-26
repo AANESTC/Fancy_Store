@@ -55,8 +55,11 @@ const Products = () => {
     setLoading(true);
     try {
       // Build query string from searchParams
-      const query = new URLSearchParams(searchParams).toString();
-      const response = await api.get(`/products?${query}`);
+      const query = new URLSearchParams(searchParams);
+      if (!query.has('pageSize')) {
+        query.set('pageSize', '50');
+      }
+      const response = await api.get(`/products?${query.toString()}`);
       
       if (response.data && response.data.products) {
         setProducts(response.data.products);

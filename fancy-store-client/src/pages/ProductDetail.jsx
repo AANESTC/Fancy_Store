@@ -101,12 +101,11 @@ const ProductDetail = () => {
   const savings = product.discount > 0 ? (product.price - product.discountedPrice).toFixed(2) : 0;
   const isWishlisted = wishlistItems.some(item => item.productId === product?.productId);
 
-  // Generate mock gallery since API has only one image
   const galleryImages = [
-    product.imageUrl,
-    product.imageUrl,
-    product.imageUrl,
-    product.imageUrl
+    { url: product.imageUrl, rotate: 0 },
+    { url: product.imageUrl, rotate: 90 },
+    { url: product.imageUrl, rotate: 180 },
+    { url: product.imageUrl, rotate: 270 }
   ];
 
   return (
@@ -164,20 +163,30 @@ const ProductDetail = () => {
                   <button 
                     key={idx}
                     onClick={() => setActiveImage(idx)}
-                    className={`w-20 h-24 md:w-full md:h-28 rounded-xl overflow-hidden border-2 transition-all shrink-0 ${activeImage === idx ? 'border-primary-600 shadow-md scale-105' : 'border-slate-100 opacity-60 hover:opacity-100'}`}
+                    className={`w-20 h-24 md:w-full md:h-28 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-white ${activeImage === idx ? 'border-primary-600 shadow-md scale-105' : 'border-slate-100 opacity-60 hover:opacity-100'}`}
                   >
-                    <img src={img} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
+                    <img 
+                      src={img.url} 
+                      alt={`Thumbnail ${idx}`} 
+                      className="w-full h-full object-cover transition-transform duration-300" 
+                      style={{ transform: `rotate(${img.rotate}deg)` }} 
+                    />
                   </button>
                 ))}
               </div>
 
               {/* Main Image */}
-              <div className="flex-1 bg-slate-50 rounded-2xl overflow-hidden relative group cursor-zoom-in min-h-[400px]">
-                <img 
-                  src={galleryImages[activeImage]} 
-                  alt={product.name} 
-                  className="w-full h-full object-contain absolute inset-0 mix-blend-multiply group-hover:scale-150 transition-transform duration-500 origin-center"
-                />
+              <div className="flex-1 bg-white rounded-2xl overflow-hidden relative group cursor-zoom-in min-h-[400px] border border-slate-100">
+                <div 
+                  className="absolute inset-0 transition-transform duration-500 ease-in-out" 
+                  style={{ transform: `rotate(${galleryImages[activeImage].rotate}deg)` }}
+                >
+                  <img 
+                    src={galleryImages[activeImage].url} 
+                    alt={product.name} 
+                    className="w-full h-full object-contain mix-blend-multiply group-hover:scale-150 transition-transform duration-500 origin-center"
+                  />
+                </div>
               </div>
             </div>
 

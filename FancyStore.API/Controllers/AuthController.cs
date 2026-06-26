@@ -61,7 +61,7 @@ public class AuthController : ControllerBase
         var admin = await _context.Users.FirstOrDefaultAsync(u => u.Email == "admin@gmail.com");
         if (admin != null)
         {
-            admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword("queenakka@123");
+            admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin@123");
             await _context.SaveChangesAsync();
         }
         return Ok("Admin password updated");

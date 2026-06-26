@@ -74,7 +74,7 @@ const AdminLogin = () => {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="admin@example.com"
+                placeholder="admin@gmail.com"
                 className="admin-input"
                 id="admin-email"
                 autoComplete="username"
